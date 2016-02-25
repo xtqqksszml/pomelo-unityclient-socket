@@ -21,7 +21,6 @@ namespace Pomelo.DotNetClient.Test
             {
                 pc.connect(null, data =>
                 {
-
                     Console.WriteLine("on data back" + data.ToString());
                     JsonObject msg = new JsonObject();
                     msg["uid"] = 111;
@@ -75,7 +74,7 @@ namespace Pomelo.DotNetClient.Test
 
         public static void Run()
         {
-            string host = "192.168.0.156";
+            string host = "127.0.0.1";
             int port = 3014;
 
             loginTest(host, port);

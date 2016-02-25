@@ -43,13 +43,24 @@ namespace Pomelo.DotNetClient
             List<Action<JsonObject>> list = null;
             if (this.eventMap.TryGetValue(eventName, out list))
             {
-                list.Add(callback);
+                if(!list.Contains(callback))
+                    list.Add(callback);
             }
             else
             {
                 list = new List<Action<JsonObject>>();
                 list.Add(callback);
                 this.eventMap.Add(eventName, list);
+            }
+        }
+
+        public void RemoveOnEvent(string eventName, Action<JsonObject> cb)
+        {
+             List<Action<JsonObject>> list = null;
+            if (this.eventMap.TryGetValue(eventName, out list))
+            {
+                if (list.Contains(cb))
+                    list.Remove(cb);
             }
         }
 
