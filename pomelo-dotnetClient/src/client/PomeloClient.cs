@@ -193,12 +193,12 @@ namespace Pomelo.DotNetClient
             protocol.send(route, msg);
         }
 
-        public void addLinstener(string eventName, Action<JsonObject> action)
+        public void addOnEvent(string eventName, Action<JsonObject> action)
         {
             eventManager.AddOnEvent(eventName, action);
         }
 
-        public void removeLinstener(string eventName, Action<JsonObject> action)
+        public void removeOnEvent(string eventName, Action<JsonObject> action)
         {
             eventManager.RemoveOnEvent(eventName, action);
         }
