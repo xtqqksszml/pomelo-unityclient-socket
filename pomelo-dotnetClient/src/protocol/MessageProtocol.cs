@@ -101,15 +101,10 @@ namespace Pomelo.DotNetClient
 
             //Construct the result
             byte[] result = new byte[offset + body.Length];
-            for (int i = 0; i < offset; i++)
-            {
-                result[i] = head[i];
-            }
-
-            for (int i = 0; i < body.Length; i++)
-            {
-                result[offset + i] = body[i];
-            }
+            // Modify by ZhangMinglin
+            // Optimize: bytes copy!
+            Array.Copy(head, result, offset);
+            Array.Copy(body, 0, result, offset, body.Length);
 
             //Add id to route map
             if (id > 0) reqMap.Add(id, route);
@@ -172,10 +167,9 @@ namespace Pomelo.DotNetClient
 
             //Decode body
             byte[] body = new byte[buffer.Length - offset];
-            for (int i = 0; i < body.Length; i++)
-            {
-                body[i] = buffer[i + offset];
-            }
+            // Modify by ZhangMinglin
+            // Optimize: bytes copy!
+            Array.Copy(buffer, offset, body, 0, body.Length);
 
             JsonObject msg;
             if (decodeProtos.ContainsKey(route))
@@ -222,10 +216,9 @@ namespace Pomelo.DotNetClient
 
         private void writeBytes(byte[] source, int offset, byte[] target)
         {
-            for (int i = 0; i < source.Length; i++)
-            {
-                target[offset + i] = source[i];
-            }
+            // Modify by ZhangMinglin
+            // Optimize: bytes copy!
+            Array.Copy(source, 0, target, offset, source.Length);
         }
     }
 }

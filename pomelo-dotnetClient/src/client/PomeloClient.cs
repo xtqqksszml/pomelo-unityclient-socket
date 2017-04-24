@@ -92,8 +92,9 @@ namespace Pomelo.DotNetClient
             }
 
             this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            IPEndPoint ie = new IPEndPoint(ipAddress, port);
+            this.socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
 
+            IPEndPoint ie = new IPEndPoint(ipAddress, port);
             socket.BeginConnect(ie, new AsyncCallback((result) =>
             {
                 try

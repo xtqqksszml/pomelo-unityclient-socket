@@ -5,7 +5,7 @@ namespace Pomelo.DotNetClient
 {
     class StateObject
     {
-        public const int BufferSize = 1024;
+        public const int BufferSize = 8 * 1024;
         internal byte[] buffer = new byte[BufferSize];
     }
 

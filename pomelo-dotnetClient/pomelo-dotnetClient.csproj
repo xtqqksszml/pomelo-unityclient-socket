@@ -53,7 +53,8 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Reference Include="SimpleJson">
+    <Reference Include="SimpleJson, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\SimpleJson.dll</HintPath>
     </Reference>
     <Reference Include="System" />
