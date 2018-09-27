@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net.Sockets;
 
 namespace Pomelo.DotNetClient
@@ -54,6 +55,7 @@ namespace Pomelo.DotNetClient
                 //    str += code.ToString();
                 //}
                 //Console.WriteLine("send:" + buffer.Length + " " + str.Length + "  " + str);
+                Trace.TraceInformation("socket.BeginSend:" + buffer.Length);
                 this.asyncSend = socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(sendCallback), socket);
 
                 this.onSending = true;
@@ -62,7 +64,7 @@ namespace Pomelo.DotNetClient
 
         private void sendCallback(IAsyncResult asyncSend)
         {
-            //UnityEngine.Debug.Log("sendCallback " + this.transportState);
+            Trace.TraceInformation("sendCallback " + this.transportState);
             if (this.transportState == TransportState.closed) return;
             socket.EndSend(asyncSend);
             this.onSending = false;
@@ -70,7 +72,7 @@ namespace Pomelo.DotNetClient
 
         public void receive()
         {
-            //Console.WriteLine("receive state : {0}, {1}", this.transportState, socket.Available);
+            Trace.TraceInformation("receive state : {0}, {1}", this.transportState, socket.Available);
             this.asyncReceive = socket.BeginReceive(stateObject.buffer, 0, stateObject.buffer.Length, SocketFlags.None, new AsyncCallback(endReceive), stateObject);
             this.onReceiving = true;
         }
@@ -88,6 +90,7 @@ namespace Pomelo.DotNetClient
 
         private void endReceive(IAsyncResult asyncReceive)
         {
+            Trace.TraceWarning("endReceive");
             if (this.transportState == TransportState.closed)
                 return;
             StateObject state = (StateObject)asyncReceive.AsyncState;
@@ -107,12 +110,14 @@ namespace Pomelo.DotNetClient
                 }
                 else
                 {
+                    Trace.TraceWarning("Receive length < 0");
                     if (this.onDisconnect != null) this.onDisconnect();
                 }
 
             }
-            catch (System.Net.Sockets.SocketException)
+            catch (System.Net.Sockets.SocketException e)
             {
+                Trace.TraceWarning(e.ToString());
                 if (this.onDisconnect != null)
                     this.onDisconnect();
             }

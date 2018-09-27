@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Timers;
 
 namespace Pomelo.DotNetClient
@@ -32,7 +33,8 @@ namespace Pomelo.DotNetClient
             //check timeout
             if (timeout > interval * 2)
             {
-                protocol.getPomeloClient().disconnect();
+                Trace.TraceInformation("timeout "+timeout+" > "+ interval * 2);
+                protocol.getPomeloClient().timeout();
                 //stop();
                 return;
             }

@@ -1,6 +1,7 @@
 ﻿using SimpleJson;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -28,7 +29,10 @@ namespace Pomelo.DotNetClient
         TIMEOUT,
 
         [Description("netwrok error")]
-        ERROR
+        ERROR,
+
+        [Description("netwrok kick")]
+        KICK,
     }
 
     public class PomeloClient : IDisposable
@@ -47,7 +51,7 @@ namespace Pomelo.DotNetClient
         private bool disposed = false;
         private uint reqId = 1;
 
-        private ManualResetEvent timeoutEvent = new ManualResetEvent(false);
+        //private ManualResetEvent timeoutEvent = new ManualResetEvent(false);
         private int timeoutMSec = 8000;    //connect timeout count in millisecond
 
         public PomeloClient(int timeout_millisecond = 8000)
@@ -63,7 +67,7 @@ namespace Pomelo.DotNetClient
         /// <param name="callback">socket successfully connected callback(in network thread)</param>
         public void initClient(string host, int port, Action callback = null)
         {
-            timeoutEvent.Reset();
+            ManualResetEvent timeoutEvent = new ManualResetEvent(false);
             eventManager = new EventManager();
             NetWorkChanged(NetWorkState.CONNECTING);
 
@@ -71,7 +75,7 @@ namespace Pomelo.DotNetClient
 
             try
             {
-                
+                // 解析服务器地址
                 if(!IPAddress.TryParse(host, out ipAddress))
                 {
                     IPAddress[] addresses = Dns.GetHostEntry(host).AddressList;
@@ -87,7 +91,7 @@ namespace Pomelo.DotNetClient
             }
             catch (Exception e)
             {
-                NetWorkChanged(NetWorkState.ERROR);
+                error();
                 return;
             }
 
@@ -98,7 +102,7 @@ namespace Pomelo.DotNetClient
 
             this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-
+            Trace.TraceInformation("new Socket");
             IPEndPoint ie = new IPEndPoint(ipAddress, port);
             socket.BeginConnect(ie, new AsyncCallback((result) =>
             {
@@ -117,9 +121,12 @@ namespace Pomelo.DotNetClient
                 {
                     if (netWorkState != NetWorkState.TIMEOUT)
                     {
-                        NetWorkChanged(NetWorkState.ERROR);
+                        error();
                     }
-                    Dispose();
+                    else
+                    {
+                        Dispose();
+                    }
                 }
                 finally
                 {
@@ -129,12 +136,13 @@ namespace Pomelo.DotNetClient
 
             if (timeoutEvent.WaitOne(timeoutMSec, false))
             {
-                if (netWorkState != NetWorkState.CONNECTED && netWorkState != NetWorkState.ERROR)
+                if (netWorkState == NetWorkState.CONNECTING)
                 {
-                    NetWorkChanged(NetWorkState.TIMEOUT);
-                    Dispose();
+                    timeout();
                 }
             }
+            timeoutEvent.Close();
+            timeoutEvent = null;
         }
 
         /// <summary>
@@ -151,33 +159,54 @@ namespace Pomelo.DotNetClient
             }
         }
 
-        public void connect()
+        public bool connect()
         {
-            connect(null, null);
+            return connect(null, null);
         }
 
-        public void connect(JsonObject user)
+        public bool connect(JsonObject user)
         {
-            connect(user, null);
+            return connect(user, null);
         }
 
-        public void connect(Action<JsonObject> handshakeCallback)
+        public bool connect(Action<JsonObject> handshakeCallback)
         {
-            connect(null, handshakeCallback);
+            return connect(null, handshakeCallback);
         }
 
         public bool connect(JsonObject user, Action<JsonObject> handshakeCallback)
         {
+            ManualResetEvent timeoutEvent = new ManualResetEvent(false);
             try
             {
-                protocol.start(user, handshakeCallback);
+                protocol.start(user, (JsonObject json) =>
+                {
+                    try
+                    {
+                        if (handshakeCallback != null) { handshakeCallback(json); }
+                    }
+                    finally
+                    {
+                        timeoutEvent.Set();
+                    }
+                });
+
+                if (timeoutEvent.WaitOne(timeoutMSec, false))
+                {
+                    if (!protocol.isWaking())
+                    {
+                        timeout();
+                    }
+                }
                 return true;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                return false;
             }
+            timeoutEvent.Close();
+            timeoutEvent = null;
+            return false;
         }
 
         private JsonObject emptyMsg = new JsonObject();
@@ -229,6 +258,24 @@ namespace Pomelo.DotNetClient
         {
             Dispose();
             NetWorkChanged(NetWorkState.DISCONNECTED);
+        }
+
+        public void timeout()
+        {
+            Dispose();
+            NetWorkChanged(NetWorkState.TIMEOUT);
+        }
+
+        public void Kick()
+        {
+            Dispose();
+            NetWorkChanged(NetWorkState.KICK);
+        }
+
+        public void error()
+        {
+            Dispose();
+            NetWorkChanged(NetWorkState.ERROR);
         }
 
         public void Dispose()

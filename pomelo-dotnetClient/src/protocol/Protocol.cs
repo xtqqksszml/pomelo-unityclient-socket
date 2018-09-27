@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using SimpleJson;
 using System.Text;
 
@@ -21,6 +22,7 @@ namespace Pomelo.DotNetClient
         public Protocol(PomeloClient pc, System.Net.Sockets.Socket socket)
         {
             this.pc = pc;
+            Trace.TraceInformation("this.transporter = new Transporter");
             this.transporter = new Transporter(socket, this.processMessage);
             this.transporter.onDisconnect = onDisconnect;
 
@@ -28,8 +30,14 @@ namespace Pomelo.DotNetClient
             this.state = ProtocolState.start;
         }
 
+        internal bool isWaking()
+        {
+            return this.state == ProtocolState.working;
+        }
+
         internal void start(JsonObject user, Action<JsonObject> callback)
         {
+            Trace.TraceInformation("transporter.start");
             this.transporter.start();
             this.handshake.request(user, callback);
 
@@ -55,6 +63,7 @@ namespace Pomelo.DotNetClient
         internal void send(PackageType type)
         {
             if (this.state == ProtocolState.closed) return;
+            Trace.TraceInformation("send " + type);
             transporter.send(PackageProtocol.encode(type));
         }
 
@@ -75,7 +84,7 @@ namespace Pomelo.DotNetClient
             if (this.state == ProtocolState.closed) return;
 
             byte[] pkg = PackageProtocol.encode(type, body);
-
+            Trace.TraceInformation("send:" + type);
             transporter.send(pkg);
         }
 
@@ -83,11 +92,10 @@ namespace Pomelo.DotNetClient
         internal void processMessage(byte[] bytes)
         {
             Package pkg = PackageProtocol.decode(bytes);
-
+            Trace.TraceInformation("processMessage:" + pkg.type + " " + this.state);
             //Ignore all the message except handshading at handshake stage
             if (pkg.type == PackageType.PKG_HANDSHAKE && this.state == ProtocolState.handshaking)
             {
-
                 //Ignore all the message except handshading
                 JsonObject data = (JsonObject)SimpleJson.SimpleJson.DeserializeObject(Encoding.UTF8.GetString(pkg.body));
 
@@ -107,7 +115,8 @@ namespace Pomelo.DotNetClient
             }
             else if (pkg.type == PackageType.PKG_KICK)
             {
-                this.getPomeloClient().disconnect();
+                Trace.TraceInformation("pkg.type == PackageType.PKG_KICK");
+                this.getPomeloClient().Kick();
                 this.close();
             }
         }
@@ -119,7 +128,7 @@ namespace Pomelo.DotNetClient
             {
                 throw new Exception("Handshake error! Please check your handshake config.");
             }
-
+            Trace.TraceInformation("processHandshakeData");
             //Set compress data
             JsonObject sys = (JsonObject)msg["sys"];
 
@@ -141,7 +150,11 @@ namespace Pomelo.DotNetClient
 
             //Init heartbeat service
             int interval = 0;
-            if (sys.ContainsKey("heartbeat")) interval = Convert.ToInt32(sys["heartbeat"]);
+            if (sys.ContainsKey("heartbeat"))
+            {
+                interval = Convert.ToInt32(sys["heartbeat"]);
+                Trace.TraceInformation("heartbeat = "+ interval);
+            }
             heartBeatService = new HeartBeatService(interval, this);
 
             if (interval > 0)
@@ -162,11 +175,13 @@ namespace Pomelo.DotNetClient
         //The socket disconnect
         private void onDisconnect()
         {
+            Trace.TraceInformation("socket disconnect");
             this.pc.disconnect();
         }
 
         internal void close()
         {
+            Trace.TraceInformation("close");
             transporter.close();
 
             if (heartBeatService != null) heartBeatService.stop();
