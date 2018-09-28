@@ -33,8 +33,11 @@ namespace Pomelo.DotNetClient
         /// </param>
         public void InvokeCallBack(uint id, JsonObject data)
         {
-            if (!callBackMap.ContainsKey(id)) return;
-            callBackMap[id].Invoke(data);
+            if (callBackMap.ContainsKey(id))
+            {
+                callBackMap[id].Invoke(data);
+                callBackMap.Remove(id);
+            }
         }
 
         //Adds the event to eventMap by name.

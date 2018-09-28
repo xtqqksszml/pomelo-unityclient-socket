@@ -97,6 +97,7 @@ namespace Pomelo.DotNetClient
 
             if (ipAddress == null)
             {
+                error();
                 throw new Exception("can not parse host : " + host);
             }
 
@@ -220,7 +221,7 @@ namespace Pomelo.DotNetClient
             this.eventManager.AddCallBack(reqId, action);
             protocol.send(route, reqId, msg);
 
-            reqId++;
+            if(reqId == int.MaxValue) { reqId = 1; } else { reqId++; }
         }
 
         public void notify(string route, JsonObject msg)
