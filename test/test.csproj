@@ -45,7 +45,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="client\ClientTest.cs" />
+    <Compile Include="protobuf\CodecTest.cs" />
+    <Compile Include="protobuf\ProtobufTest.cs" />
     <Compile Include="Test.cs" />
+    <Compile Include="transport\TransportTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\pomelo-dotnetClient\pomelo-dotnetClient.csproj">

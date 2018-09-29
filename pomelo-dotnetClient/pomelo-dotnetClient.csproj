@@ -67,8 +67,8 @@
     <Compile Include="src\protobuf\MsgDecoder.cs" />
     <Compile Include="src\protobuf\MsgEncoder.cs" />
     <Compile Include="src\protobuf\Protobuf.cs" />
-    <Compile Include="src\protobuf\test\CodecTest.cs" />
-    <Compile Include="src\protobuf\test\ProtobufTest.cs" />
+    <Compile Include="src\protobuf\protobuf\CodecTest.cs" />
+    <Compile Include="src\protobuf\protobuf\ProtobufTest.cs" />
     <Compile Include="src\protobuf\util\Util.cs" />
     <Compile Include="src\protocol\HandShakeService.cs" />
     <Compile Include="src\protocol\HeartBeatService.cs" />
@@ -84,7 +84,5 @@
     <Compile Include="src\transport\TransportState.cs" />
     <Compile Include="src\client\EventManager.cs" />
     <Compile Include="src\client\PomeloClient.cs" />
-    <Compile Include="src\client\test\ClientTest.cs" />
-    <Compile Include="src\transport\test\TransportTest.cs" />
   </ItemGroup>
 </Project>
