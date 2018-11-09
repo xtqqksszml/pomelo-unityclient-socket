@@ -39,7 +39,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -67,8 +67,6 @@
     <Compile Include="src\protobuf\MsgDecoder.cs" />
     <Compile Include="src\protobuf\MsgEncoder.cs" />
     <Compile Include="src\protobuf\Protobuf.cs" />
-    <Compile Include="src\protobuf\protobuf\CodecTest.cs" />
-    <Compile Include="src\protobuf\protobuf\ProtobufTest.cs" />
     <Compile Include="src\protobuf\util\Util.cs" />
     <Compile Include="src\protocol\HandShakeService.cs" />
     <Compile Include="src\protocol\HeartBeatService.cs" />

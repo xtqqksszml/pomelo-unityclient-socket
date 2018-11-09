@@ -76,7 +76,7 @@ namespace Pomelo.DotNetClient
             try
             {
                 // 解析服务器地址
-                if(!IPAddress.TryParse(host, out ipAddress))
+                if (!IPAddress.TryParse(host, out ipAddress))
                 {
                     IPAddress[] addresses = Dns.GetHostEntry(host).AddressList;
                     foreach (var item in addresses)
@@ -112,35 +112,35 @@ namespace Pomelo.DotNetClient
                     this.socket.EndConnect(result);
                     this.protocol = new Protocol(this, this.socket);
                     NetWorkChanged(NetWorkState.CONNECTED);
-
-                    if (callback != null)
-                    {
-                        callback();
-                    }
                 }
                 catch (SocketException e)
                 {
-                    if (netWorkState != NetWorkState.TIMEOUT)
+                    if (netWorkState != NetWorkState.DISCONNECTED
+                        && netWorkState != NetWorkState.TIMEOUT
+                        && netWorkState != NetWorkState.ERROR
+                        && netWorkState != NetWorkState.KICK)
                     {
                         error();
-                    }
-                    else
-                    {
-                        Dispose();
                     }
                 }
                 finally
                 {
-                    timeoutEvent.Set();
+                    if (timeoutEvent != null)
+                    {
+                        timeoutEvent.Set();
+                    }
+                }
+
+                if (callback != null)
+                {
+                    callback();
                 }
             }), this.socket);
 
-            if (timeoutEvent.WaitOne(timeoutMSec, false))
+            timeoutEvent.WaitOne(timeoutMSec, false);
+            if (netWorkState == NetWorkState.CONNECTING)
             {
-                if (netWorkState == NetWorkState.CONNECTING)
-                {
-                    timeout();
-                }
+                timeout();
             }
             timeoutEvent.Close();
             timeoutEvent = null;
@@ -182,31 +182,37 @@ namespace Pomelo.DotNetClient
             {
                 protocol.start(user, (JsonObject json) =>
                 {
+                    timeoutEvent.Set();
                     try
                     {
                         if (handshakeCallback != null) { handshakeCallback(json); }
                     }
-                    finally
+                    catch (SocketException e)
                     {
-                        timeoutEvent.Set();
+                        if (netWorkState != NetWorkState.DISCONNECTED
+                            && netWorkState != NetWorkState.TIMEOUT
+                            && netWorkState != NetWorkState.ERROR
+                            && netWorkState != NetWorkState.KICK)
+                        {
+                            error();
+                        }
                     }
                 });
 
-                if (timeoutEvent.WaitOne(timeoutMSec, false))
+                timeoutEvent.WaitOne(timeoutMSec, false);
+                if (!protocol.isWaking())
                 {
-                    if (!protocol.isWaking())
-                    {
-                        timeout();
-                    }
+                    timeout();
                 }
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Trace.TraceInformation(e.ToString());
             }
             timeoutEvent.Close();
             timeoutEvent = null;
+            error();
             return false;
         }
 
@@ -221,7 +227,7 @@ namespace Pomelo.DotNetClient
             this.eventManager.AddCallBack(reqId, action);
             protocol.send(route, reqId, msg);
 
-            if(reqId == int.MaxValue) { reqId = 1; } else { reqId++; }
+            if (reqId == int.MaxValue) { reqId = 1; } else { reqId++; }
         }
 
         public void notify(string route, JsonObject msg)
